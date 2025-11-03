@@ -16,6 +16,9 @@ A utility script to process all `.webvtt` subtitle files in a specified folder, 
 
 - [uv](https://docs.astral.sh/uv/)
 
+## Testing
+
+Use `uv run pytest` to run the tests.
 
 ## Usage
 
