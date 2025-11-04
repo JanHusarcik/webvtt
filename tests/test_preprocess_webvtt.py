@@ -1,7 +1,9 @@
 from unittest.mock import patch, mock_open, MagicMock
-from  preprocess_webvtt import process_vtt
+from preprocess_webvtt import process_vtt, main
+import pytest
 
-class TestPreProcess:
+
+class TestFragments:
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_join_lines(self, mock_file, mock_webvtt_read):
@@ -114,7 +116,6 @@ class TestPreProcess:
         print(written)
         assert written == expected
 
-
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_named_speaker_no_dash(self, mock_file, mock_webvtt_read):
@@ -133,7 +134,7 @@ class TestPreProcess:
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
             "⎡⎡00:00:00.167 --> 00:00:03.792⎦⎦ "
-            "⎡⎡Speaker BANANAS:⎦⎦ Previously on \"House of Villains\"... \n"
+            '⎡⎡Speaker BANANAS:⎦⎦ Previously on "House of Villains"... \n'
         )
         print(written)
         assert written == expected
@@ -170,3 +171,52 @@ class TestPreProcess:
             "⎡⎡Speaker ⎦⎦ Whoo! \n"
         )
         assert written == expected
+
+
+class TestMain:
+    @patch("preprocess_webvtt.process_vtt")
+    @patch("preprocess_webvtt.glob.glob")
+    @patch("preprocess_webvtt.os.path.isdir")
+    @patch("preprocess_webvtt.os.path.isfile")
+    @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
+    def test_main_single_file(
+        self, mock_parse_args, mock_isfile, mock_isdir, mock_process_vtt
+    ):
+        # Simulate single file
+        mock_parse_args.return_value = MagicMock(path="file.webvtt")
+        mock_isfile.return_value = True
+        mock_isdir.return_value = False
+
+        main()
+        mock_process_vtt.assert_called_once_with("file.webvtt")
+
+    @patch("preprocess_webvtt.process_vtt")
+    @patch("preprocess_webvtt.glob.glob")
+    @patch("preprocess_webvtt.os.path.isdir")
+    @patch("preprocess_webvtt.os.path.isfile")
+    @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
+    def test_main_directory(
+        self, mock_parse_args, mock_isfile, mock_isdir, mock_glob, mock_process_vtt
+    ):
+        # Simulate directory with files
+        mock_parse_args.return_value = MagicMock(path="dir")
+        mock_isfile.return_value = False
+        mock_isdir.return_value = True
+        mock_glob.return_value = ["dir/a.webvtt", "dir/b.webvtt"]
+
+        main()
+        mock_process_vtt.assert_any_call("dir/a.webvtt")
+        mock_process_vtt.assert_any_call("dir/b.webvtt")
+        assert mock_process_vtt.call_count == 2
+
+    @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
+    @patch("preprocess_webvtt.os.path.isfile")
+    @patch("preprocess_webvtt.os.path.isdir")
+    def test_main_invalid_path(self, mock_isdir, mock_isfile, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(path="invalid")
+        mock_isfile.return_value = False
+        mock_isdir.return_value = False
+
+        with pytest.raises(Exception) as excinfo:
+            main()
+        assert "Path invalid is not valid." in str(excinfo.value)
