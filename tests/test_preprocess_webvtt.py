@@ -170,5 +170,4 @@ class TestPreProcess:
             "⎡⎡00:00:57.083 --> 00:00:59.792⎦⎦ ⎡⎡Speaker ⎦⎦ [cackling]\n"
             "⎡⎡Speaker ⎦⎦ Whoo! \n"
         )
-        #pprint.pp(written)
         assert written == expected
