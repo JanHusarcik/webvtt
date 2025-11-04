@@ -49,8 +49,7 @@ def process_vtt(file):
     if all_caps:
         print("All captions are in uppercase.")
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="Process all .webvtt files in a folder."
     )
@@ -61,3 +60,6 @@ if __name__ == "__main__":
     pattern = os.path.join(folder, "**", "*.webvtt")
     for vtt_file in glob.glob(pattern, recursive=True):
         process_vtt(vtt_file)
+
+if __name__ == "__main__":
+    main()
