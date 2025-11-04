@@ -4,9 +4,11 @@ import glob
 import os
 import argparse
 from typing import List
+import helpers.logging
+from structlog import BoundLogger
 
 
-def process_vtt(file:str):
+def process_vtt(file: str, log: BoundLogger):
     all_caps: bool = True
     newline_in_previous: bool = False
     try:
@@ -48,8 +50,8 @@ def process_vtt(file:str):
                     newline_in_previous = False
                 f.write(re.sub(" +", " ", fragment))
     except Exception as e:
-        print(f"Error processing file {file}: {e}")
-        return
+        log.exception("Processing error", file=file, error=str(e))
+        raise Exception("Processing error") from e
 
     if all_caps:
         print("All captions are in uppercase.")
@@ -60,9 +62,12 @@ def main():
         description="Process all .webvtt files in a folder."
     )
     parser.add_argument(
-        "path", help="Path to the file, or folder containing .webvtt files")
+        "path", help="Path to the file, or folder containing .webvtt files"
+    )
     args = parser.parse_args()
     path = args.path
+    log = helpers.logging.create_log("preprocessing")
+    log.info("Starting preprocessing", path=path)
     files: List[str] = []
     if os.path.isfile(path):
         files.append(path)
@@ -70,9 +75,11 @@ def main():
         pattern = os.path.join(path, "**", "*.webvtt")
         files.extend(glob.glob(pattern, recursive=True))
     else:
+        log.exception("Invalid path", path=path)
         raise Exception(f"Path {path} is not valid.")
+    log.info("Files", count=len(files))
     for vtt_file in files:
-        process_vtt(vtt_file)
+        process_vtt(vtt_file, log)
 
 
 if __name__ == "__main__":

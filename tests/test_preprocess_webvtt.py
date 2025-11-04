@@ -4,9 +4,13 @@ import pytest
 
 
 class TestFragments:
+    @pytest.fixture
+    def log(self):
+        return MagicMock()
+
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_join_lines(self, mock_file, mock_webvtt_read):
+    def test_join_lines(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
         caption.start = "00:00:08.459"
         caption.end = "00:00:12.459"
@@ -14,7 +18,7 @@ class TestFragments:
         caption.raw_text = "She had that level\nof love and care."
         mock_webvtt_read.return_value = [caption]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -26,7 +30,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_simple_cue(self, mock_file, mock_webvtt_read):
+    def test_simple_cue(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
         caption.start = "00:00:16.125"
         caption.end = "00:00:20.542"
@@ -34,7 +38,7 @@ class TestFragments:
         caption.raw_text = "I was in shock."
         mock_webvtt_read.return_value = [caption]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -44,7 +48,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_join_multiple_cues(self, mock_file, mock_webvtt_read):
+    def test_join_multiple_cues(self, mock_file, mock_webvtt_read, log):
         caption1 = MagicMock()
         caption1.start = "00:00:04.667"
         caption1.end = "00:00:06.667"
@@ -59,7 +63,7 @@ class TestFragments:
 
         mock_webvtt_read.return_value = [caption1, caption2]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -72,7 +76,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_multiple_speakers(self, mock_file, mock_webvtt_read):
+    def test_multiple_speakers(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
         caption.start = "00:00:23.042"
         caption.end = "00:00:24.918"
@@ -81,7 +85,7 @@ class TestFragments:
         caption.lines = ["-A hostel in New York?", "-Yeah."]
         mock_webvtt_read.return_value = [caption]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -95,7 +99,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_multiple_speakers_with_name(self, mock_file, mock_webvtt_read):
+    def test_multiple_speakers_with_name(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
         caption.start = "00:02:18.125"
         caption.end = "00:02:21.292"
@@ -104,7 +108,7 @@ class TestFragments:
         caption.lines = ["-Hi, everyone. How are you?", "-TANISHA: Cold."]
         mock_webvtt_read.return_value = [caption]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -118,7 +122,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_named_speaker_no_dash(self, mock_file, mock_webvtt_read):
+    def test_named_speaker_no_dash(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
         caption.start = "00:00:00.167"
         caption.end = "00:00:03.792"
@@ -128,7 +132,7 @@ class TestFragments:
         caption.lines = ["BANANAS: Previously on", '"House of Villains"...']
         mock_webvtt_read.return_value = [caption]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -141,7 +145,7 @@ class TestFragments:
 
     @patch("preprocess_webvtt.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_multiple_speakers_and_sounds(self, mock_file, mock_webvtt_read):
+    def test_multiple_speakers_and_sounds(self, mock_file, mock_webvtt_read, log):
         # First caption
         caption1 = MagicMock()
         caption1.start = "00:00:55.125"
@@ -160,7 +164,7 @@ class TestFragments:
 
         mock_webvtt_read.return_value = [caption1, caption2]
 
-        process_vtt("testfile")
+        process_vtt("testfile", log)
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -174,45 +178,70 @@ class TestFragments:
 
 
 class TestMain:
+    @patch("preprocess_webvtt.helpers.logging.create_log")
     @patch("preprocess_webvtt.process_vtt")
     @patch("preprocess_webvtt.glob.glob")
     @patch("preprocess_webvtt.os.path.isdir")
     @patch("preprocess_webvtt.os.path.isfile")
     @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
     def test_main_single_file(
-        self, mock_parse_args, mock_isfile, mock_isdir, mock_glob, mock_process_vtt
+        self,
+        mock_parse_args,
+        mock_isfile,
+        mock_isdir,
+        mock_glob,
+        mock_process_vtt,
+        mock_create_log,
     ):
+        mock_logger = MagicMock()
+        mock_create_log.return_value = mock_logger
         # Simulate single file
         mock_parse_args.return_value = MagicMock(path="file.webvtt")
         mock_isfile.return_value = True
         mock_isdir.return_value = False
-
         main()
-        mock_process_vtt.assert_called_once_with("file.webvtt")
+        mock_process_vtt.assert_called_once_with("file.webvtt", mock_logger)
+        mock_logger.info.assert_any_call("Starting preprocessing", path="file.webvtt")
 
+    @patch("preprocess_webvtt.helpers.logging.create_log")
     @patch("preprocess_webvtt.process_vtt")
     @patch("preprocess_webvtt.glob.glob")
     @patch("preprocess_webvtt.os.path.isdir")
     @patch("preprocess_webvtt.os.path.isfile")
     @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
     def test_main_directory(
-        self, mock_parse_args, mock_isfile, mock_isdir, mock_glob, mock_process_vtt
+        self,
+        mock_parse_args,
+        mock_isfile,
+        mock_isdir,
+        mock_glob,
+        mock_process_vtt,
+        mock_create_log,
     ):
+        mock_logger = MagicMock()
+        mock_create_log.return_value = mock_logger
         # Simulate directory with files
         mock_parse_args.return_value = MagicMock(path="dir")
         mock_isfile.return_value = False
         mock_isdir.return_value = True
+
         mock_glob.return_value = ["dir/a.webvtt", "dir/b.webvtt"]
 
         main()
-        mock_process_vtt.assert_any_call("dir/a.webvtt")
-        mock_process_vtt.assert_any_call("dir/b.webvtt")
+        mock_process_vtt.assert_any_call("dir/a.webvtt", mock_logger)
+        mock_process_vtt.assert_any_call("dir/b.webvtt", mock_logger)
         assert mock_process_vtt.call_count == 2
+        mock_logger.info.assert_any_call("Starting preprocessing", path="dir")
 
+    @patch("preprocess_webvtt.helpers.logging.create_log")
     @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
     @patch("preprocess_webvtt.os.path.isfile")
     @patch("preprocess_webvtt.os.path.isdir")
-    def test_main_invalid_path(self, mock_isdir, mock_isfile, mock_parse_args):
+    def test_main_invalid_path(
+        self, mock_isdir, mock_isfile, mock_parse_args, mock_create_log
+    ):
+        mock_logger = MagicMock()
+        mock_create_log.return_value = mock_logger
         mock_parse_args.return_value = MagicMock(path="invalid")
         mock_isfile.return_value = False
         mock_isdir.return_value = False
