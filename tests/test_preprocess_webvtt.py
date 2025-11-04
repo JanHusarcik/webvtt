@@ -180,7 +180,7 @@ class TestMain:
     @patch("preprocess_webvtt.os.path.isfile")
     @patch("preprocess_webvtt.argparse.ArgumentParser.parse_args")
     def test_main_single_file(
-        self, mock_parse_args, mock_isfile, mock_isdir, mock_process_vtt
+        self, mock_parse_args, mock_isfile, mock_isdir, mock_glob, mock_process_vtt
     ):
         # Simulate single file
         mock_parse_args.return_value = MagicMock(path="file.webvtt")
