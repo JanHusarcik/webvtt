@@ -2,11 +2,13 @@
 
 # preprocess_webvtt.py
 
-A utility script to process all `.webvtt` subtitle files in a specified folder, transforming their content and saving the results as new `.vtt` files.
+A utility script to process all `.webvtt` subtitle files in a specified folder (or a specific file), transforming their content and saving the results as new `.vtt` file(s).
 
 ## Features
 
-- Recursively finds all `.webvtt` files in a given directory.
+- Based on provided argument
+	- Recursively finds all `.webvtt` files in a given directory
+	- Works with single `.webvtt` file
 - Processes each caption:
   - Adds a custom timestamp marker.
   - Joins multi-line captions.
@@ -20,22 +22,31 @@ A utility script to process all `.webvtt` subtitle files in a specified folder, 
 
 ## Testing
 
-Use `uv run pytest` to run the tests.
+Use `uv run -m pytest` to run the tests.
 
 ## Usage
 
-```
+```bash
 uv run preprocess_webvtt.py /path/to/folder
 ```
-
 
 - Replace `path\to\folder` with the directory containing your `.webvtt` files.
 - The script will process all `.webvtt` files found recursively in the folder.
 
+or
+
+```bash
+uv run preprocess_webvtt.py /path/to/file.webvtt
+```
+
+- Replace `/path/to/file.webvtt` with the path of the specific `.webvtt` file.
+- The script will process the `.webvtt` file.
+
+
+
 ## Output
 
 - For each input file `filename.webvtt`, a processed file `filename.webvtt.vtt` will be created in the same directory.
-- If all captions in a file are uppercase, a message will be printed to the console.
 
 ## Example
 
