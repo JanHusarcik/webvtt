@@ -1,4 +1,6 @@
-﻿# preprocess_webvtt.py
+﻿[![Tests](https://github.com/JanHusarcik/webvtt_loc/actions/workflows/python-app.yml/badge.svg)](https://github.com/JanHusarcik/webvtt_loc/actions/workflows/python-app.yml)
+
+# preprocess_webvtt.py
 
 A utility script to process all `.webvtt` subtitle files in a specified folder, transforming their content and saving the results as new `.vtt` files.
 
