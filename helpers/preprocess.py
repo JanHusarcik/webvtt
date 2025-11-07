@@ -2,7 +2,12 @@ import webvtt
 import re
 from structlog import BoundLogger
 import os
+from typing import Final
 
+
+SPEAKER_MATCH_RE: Final[str] = r"^ *-(?!-)"
+SPEAKER_CAPTURE_RE: Final[str] = r"^ *-(\s*[A-Z]+:)?"
+SOUND_RE: Final[str]=r"^ *(?:\[|\()[^\]]*(?:\]|\)) *$"
 
 def process_vtt(file: str, log: BoundLogger):
     all_caps: bool = True
@@ -24,17 +29,14 @@ def process_vtt(file: str, log: BoundLogger):
                 fragment: str = ""
                 fragment += f"⎡⎡{caption.start} --> {caption.end}⎦⎦ "
                 # multiple speakers
-                if caption.raw_text.startswith("-") and not caption.raw_text.startswith(
-                    "--"
-                ):
+                if re.match(SPEAKER_MATCH_RE, caption.raw_text):
                     # Join lines using '\n' only if line starts with '-' and not '--', else join with space
                     if all(
-                        line.startswith("-") and not line.startswith("--")
-                        for line in caption.lines
+                        re.match(SPEAKER_MATCH_RE, line) for line in caption.lines
                     ):
                         fragment += (
                             "\n".join(
-                                re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
+                                re.sub(SPEAKER_CAPTURE_RE, r"⎡⎡Speaker \1⎦⎦ ", line)
                                 for line in caption.lines
                             )
                             + " "
@@ -42,7 +44,7 @@ def process_vtt(file: str, log: BoundLogger):
                     else:
                         fragment += (
                             " ".join(
-                                re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
+                                re.sub(SPEAKER_CAPTURE_RE, r"⎡⎡Speaker \1⎦⎦ ", line)
                                 for line in caption.lines
                             )
                             + " "
@@ -51,7 +53,7 @@ def process_vtt(file: str, log: BoundLogger):
                     cue_text = " ".join(caption.raw_text.splitlines()) + " "
                     fragment += re.sub(r"^([A-Z]+:)", r"⎡⎡Speaker \1⎦⎦ ", cue_text)
                 # sounds in brackets
-                if re.match(r"^\[[^\]]*\]$", caption.raw_text) or re.match(
+                if re.match(SOUND_RE, caption.raw_text) or re.match(
                     r"⎡⎡Speaker[^⎦]*?⎦⎦ *\[[^\]]*\]", caption.raw_text
                 ):
                     if newline_in_previous:
@@ -63,7 +65,7 @@ def process_vtt(file: str, log: BoundLogger):
                     fragment += "\n"
                     newline_in_previous = True
                 # break after punctuation
-                elif re.search(r"[!?\.\)][\"']?$", caption.text):
+                elif re.search(r"[!?\.][\"']?$", caption.text):
                     fragment += "\n"
                     newline_in_previous = True
                 else:
