@@ -1,3 +1,4 @@
+from math import exp
 from unittest.mock import patch, mock_open, MagicMock
 from helpers.preprocess import process_vtt
 import pytest
@@ -272,8 +273,28 @@ class TestFragments:
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
-            "⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
+            "\n⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
             "⎡⎡00:00:03.250 --> 00:00:06.459⎦⎦ ⎡⎡Speaker ⎦⎦ LaGrange is a very pretty little town. \n"
         )
+        print(f"'{written}'")
+        print(f"'{expected}'")
+        assert written == expected
+
+    @patch("helpers.preprocess.webvtt.read")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_single_speaker_with_leading_space(self, mock_file, mock_webvtt_read, log):
+        caption = MagicMock()
+        caption.start = "00:00:06.542"
+        caption.end = "00:00:07.667"
+        caption.text = " - Welcome back, y'all"
+        caption.raw_text = " - Welcome back, y'all"
+        caption.lines = [" - Welcome back, y'all"]
+        mock_webvtt_read.return_value = [caption]
+
+        process_vtt("testfile", log)
+
+        handle = mock_file()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        expected = "⎡⎡00:00:06.542 --> 00:00:07.667⎦⎦ ⎡⎡Speaker ⎦⎦ Welcome back, y'all "
 
         assert written == expected
