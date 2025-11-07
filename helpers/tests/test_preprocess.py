@@ -297,3 +297,35 @@ class TestFragments:
         expected = "⎡⎡00:00:06.542 --> 00:00:07.667⎦⎦ ⎡⎡Speaker ⎦⎦ Welcome back, y'all "
 
         assert written == expected
+
+    @patch("helpers.preprocess.webvtt.read")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_music(self, mock_file, mock_webvtt_read, log):
+        # First caption: music notes with leading spaces
+        caption1 = MagicMock()
+        caption1.start = "00:02:27.583"
+        caption1.end = "00:02:29.292"
+        caption1.text = "   ♪♪♪♪♪"
+        caption1.raw_text = "   ♪♪♪♪♪"
+        caption1.lines = ["   ♪♪♪♪♪"]
+
+        # Second caption: speaker with leading space and dash
+        caption2 = MagicMock()
+        caption2.start = "00:02:59.500"
+        caption2.end = "00:03:00.917"
+        caption2.text = " - He's got my shoe."
+        caption2.raw_text = " - He's got my shoe."
+        caption2.lines = [" - He's got my shoe."]
+
+        mock_webvtt_read.return_value = [caption1, caption2]
+
+        process_vtt("testfile", log)
+
+        handle = mock_file()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        expected = (
+            "⎡⎡00:02:27.583 --> 00:02:29.292⎦⎦ ♪♪♪♪♪ \n"
+            "⎡⎡00:02:59.500 --> 00:03:00.917⎦⎦ ⎡⎡Speaker ⎦⎦ He's got my shoe. \n"
+        )
+
+        assert written == expected
