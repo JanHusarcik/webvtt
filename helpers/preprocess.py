@@ -64,7 +64,7 @@ def process_vtt(file: str, log: BoundLogger):
                     fragment += "\n"
                     newline_in_previous = True
                 # break after punctuation
-                elif re.search(r"[!?\.][\"']?$", caption.text):
+                elif re.search(r"[!?\.♪][\"']? *$", caption.text):
                     fragment += "\n"
                     newline_in_previous = True
                 else:

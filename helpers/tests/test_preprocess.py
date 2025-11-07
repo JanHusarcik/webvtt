@@ -272,7 +272,7 @@ class TestFragments:
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
-            "\n⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
+            "⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
             "⎡⎡00:00:03.250 --> 00:00:06.459⎦⎦ ⎡⎡Speaker ⎦⎦ LaGrange is a very pretty little town. \n"
         )
         print(f"'{written}'")
