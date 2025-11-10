@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from process_webvtt import main
-
+import difflib
+import webvtt
 
 class TestMain:
     @patch("process_webvtt.helpers.logging.create_log")
@@ -135,3 +136,14 @@ class TestMain:
         with pytest.raises(Exception) as excinfo:
             main()
         assert "Path invalid is not valid." in str(excinfo.value)
+
+class TestRoundtrip:
+    def normalize(self):
+        pass
+    def equality(self):
+        pass
+    def test_roundtrip(self):
+        pass
+        # convert original vtt to internal format
+        # convert back to vtt
+        # compare original and roundtripped vtt by parsing as webvtt and comparing cues
