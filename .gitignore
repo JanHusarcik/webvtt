@@ -6,3 +6,4 @@
 __pycache__
 /webvtt_loc.pyproj
 *.jsonl
+/uv.lock

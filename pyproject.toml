@@ -11,6 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "autopep8>=2.3.2",
     "pytest>=8.4.2",
     "ruff>=0.14.3",
 ]
