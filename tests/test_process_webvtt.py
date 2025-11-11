@@ -7,8 +7,7 @@ import re
 import tempfile
 import shutil
 from helpers import preprocess, postprocess
-from time import sleep
-import pprint
+import glob
 
 
 class TestMain:
@@ -146,13 +145,21 @@ class TestMain:
 
 
 class TestRoundtrip:
-    def normalize(self, text:str) ->str:
-        # Normalize text for comparison (strip, unify whitespace)
-        normalized = re.sub(r"(?m)^\s*-(?!-)\s*", "- ", text)
-        normalized=" ".join(normalized.strip().split())
+    test_files = [
+        os.path.basename(f)
+        for f in glob.glob(os.path.join(os.path.dirname(__file__), "*.webvtt"))
+    ]
+
+    def normalize(self, text: str) -> str:
+        # Normalize text for comparison
+        # Replace single '-' at start of line with '- ' and strip extra spaces
+        normalized = re.sub(r"(\s*)-(?!-)\s*", r"\1- ", text)
+        # Remove dash before speaker labels like '-SPEAKER:'
+        normalized = re.sub(r"(?m)^\s*-\s*(?=[A-Z]+:)\s*", "", normalized)
+        normalized = " ".join(normalized.strip().split())
         return normalized
 
-    def equality(self, cap1:webvtt.Caption, cap2:webvtt.Caption)->bool:
+    def equality(self, cap1: webvtt.Caption, cap2: webvtt.Caption) -> bool:
         # Compare start, end, and normalized text
         return (
             cap1.start == cap2.start
@@ -160,24 +167,24 @@ class TestRoundtrip:
             and self.normalize(cap1.text) == self.normalize(cap2.text)
         )
 
-    def test_roundtrip(self):
-        # Setup temp directory for prepared/final files
-        with tempfile.TemporaryDirectory() as tmpdir:
-            orig_file = os.path.join(os.path.dirname(__file__), "sample1.webvtt")
+    @pytest.mark.parametrize("filename", test_files)
+    def test_roundtrip(self, filename):
+        tmpdir = tempfile.mkdtemp()  # This will NOT delete the directory automatically
+        try:
+            orig_file = os.path.join(os.path.dirname(__file__), filename)
             # Copy original to temp to avoid modifying source
-            test_file = os.path.join(tmpdir, "sample1.webvtt")
+            test_file = os.path.join(tmpdir, filename)
             shutil.copyfile(orig_file, test_file)
 
             # Run preprocess to create prepared file
             logger = MagicMock()
             preprocess.process_vtt(test_file, logger)
-            prepared_file = os.path.join(tmpdir, "prepared", "sample1.webvtt")
+            prepared_file = os.path.join(tmpdir, "prepared", filename)
             # Run postprocess to create finalized file
             postprocess.process_vtt(prepared_file, logger)
-            finalized_file = os.path.join(tmpdir, "prepared", "final", "sample1.webvtt.vtt")
-            if not os.path.exists(finalized_file):
-                # fallback for postprocess output location
-                finalized_file = os.path.join(tmpdir, "final", "sample1.webvtt")
+            finalized_file = os.path.join(
+                tmpdir, "prepared", "final", f"{filename}.vtt"
+            )
             # Parse original and finalized files
             orig_vtt = webvtt.read(test_file)
             final_vtt = webvtt.read(finalized_file)
@@ -192,5 +199,11 @@ class TestRoundtrip:
                 assert self.equality(orig_cap, final_cap), (
                     f"Mismatch:\n"
                     f"Original (not normalized):\n{orig_cap.start}-{orig_cap.end}\n{orig_cap.text}\n"
-                    f"Final:\n{final_cap.start}-{final_cap.end}\n{final_cap.text}"
+                    f"Normalized\n{self.normalize(orig_cap.text)}\n"
+                    f"Final:\n{final_cap.start}-{final_cap.end}\n{final_cap.text}\n"
+                    f"Normalized\n{self.normalize(final_cap.text)}"
                 )
+
+        finally:
+            shutil.rmtree(tmpdir)
+            print(f"Temporary directory kept at: {tmpdir}")
