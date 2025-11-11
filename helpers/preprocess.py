@@ -31,30 +31,23 @@ def process_vtt(file: str, log: BoundLogger):
                 fragment: str = ""
                 fragment += f"⎡⎡{caption.start} --> {caption.end}⎦⎦ "
                 # multiple speakers
-                if re.match(SPEAKER_MATCH_RE, caption.raw_text):
-                    # Join lines using '\n' only if line starts with '-' and not '--', else join with space
-                    if all(re.match(SPEAKER_MATCH_RE, line) for line in caption.lines):
-                        fragment += (
-                            "\n".join(
-                                re.sub(SPEAKER_CAPTURE_RE, r"⎡⎡Speaker \1⎦⎦ ", line)
-                                for line in caption.lines
-                            )
-                            + " "
-                        )
-                    else:
-                        fragment += (
-                            " ".join(
-                                re.sub(SPEAKER_CAPTURE_RE, r"⎡⎡Speaker \1⎦⎦ ", line)
-                                for line in caption.lines
-                            )
-                            + " "
-                        )
+                if any(re.match(SPEAKER_MATCH_RE, line) for line in caption.lines):
+                    line:str=""
+                    for counter, line in enumerate(caption.lines):
+                        line=line.strip()
+                        if re.match(SPEAKER_MATCH_RE, line):
+                            if counter >0:
+                                fragment += "\n"
+                            fragment +=  re.sub(SPEAKER_CAPTURE_RE,
+                                               r"⎡⎡Speaker \1⎦⎦ ", line)
+                        else:
+                            fragment += " "+ line
                 else:
                     cue_text = " ".join(caption.raw_text.splitlines()) + " "
                     fragment += re.sub(r"^([A-Z]+:)", r"⎡⎡Speaker \1⎦⎦ ", cue_text)
                 # sounds in brackets
-                if re.match(SOUND_RE, caption.raw_text) or re.match(
-                    r"⎡⎡Speaker[^⎦]*?⎦⎦ *\[[^\]]*\]", caption.raw_text
+                if re.match(SOUND_RE, caption.text) or re.match(
+                    r"- *\[[^\]]+\]", caption.text
                 ):
                     if newline_in_previous:
                         fragment += "\n"
@@ -70,6 +63,7 @@ def process_vtt(file: str, log: BoundLogger):
                     newline_in_previous = True
                 else:
                     newline_in_previous = False
+                fragment = re.sub(r"\n\n$", "\n", fragment)
                 f.write(re.sub(" +", " ", fragment))
                 cue_count += 1
     except Exception as e:

@@ -2,7 +2,6 @@ from unittest.mock import patch, mock_open, MagicMock
 from helpers.preprocess import process_vtt
 import pytest
 
-
 class TestFragments:
     @pytest.fixture
     def log(self):
@@ -26,6 +25,28 @@ class TestFragments:
             "⎡⎡00:00:08.459 --> 00:00:12.459⎦⎦ She had that level of love and care. \n"
         )
 
+        assert written == expected
+
+    @patch("helpers.preprocess.webvtt.read")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_speaker_on_second_line(self, mock_file, mock_webvtt_read, log):
+        caption = MagicMock()
+        caption.start = "00:05:02.626"
+        caption.end = "00:05:04.375"
+        caption.text = 'called "Big Banana" before.\n-Good.'
+        caption.raw_text = 'called "Big Banana" before.\n-Good.'
+        caption.lines=['called "Big Banana" before.', '-Good.']
+        mock_webvtt_read.return_value = [caption]
+
+        process_vtt("testfile", log)
+
+        handle = mock_file()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        expected = (
+            '⎡⎡00:05:02.626 --> 00:05:04.375⎦⎦ called "Big Banana" before.\n⎡⎡Speaker ⎦⎦ Good.\n'
+        )
+        print(repr(written))
+        print(repr(expected))
         assert written == expected
 
     @patch("helpers.preprocess.webvtt.read")
@@ -92,7 +113,7 @@ class TestFragments:
         expected = (
             "⎡⎡00:00:23.042 --> 00:00:24.918⎦⎦ "
             "⎡⎡Speaker ⎦⎦ A hostel in New York?\n"
-            "⎡⎡Speaker ⎦⎦ Yeah. \n"
+            "⎡⎡Speaker ⎦⎦ Yeah.\n"
         )
         print(written)
         assert written == expected
@@ -115,7 +136,7 @@ class TestFragments:
         expected = (
             "⎡⎡00:02:18.125 --> 00:02:21.292⎦⎦ "
             "⎡⎡Speaker ⎦⎦ Hi, everyone. How are you?\n"
-            "⎡⎡Speaker TANISHA:⎦⎦ Cold. \n"
+            "⎡⎡Speaker TANISHA:⎦⎦ Cold.\n"
         )
         print(written)
         assert written == expected
@@ -152,7 +173,7 @@ class TestFragments:
         caption1.end = "00:00:57.083"
         caption1.text = "-You guys' fashion sucks.\n-[buzzer]"
         caption1.raw_text = "-You guys' fashion sucks.\n-[buzzer]"
-        caption1.lines = ["-You guys' fashion sucks.", "-[buzzer]"]
+        caption1.lines = ["-You guys' fashion sucks.", "-[buzzer]"] 
 
         # Second caption
         caption2 = MagicMock()
@@ -170,10 +191,12 @@ class TestFragments:
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
             "⎡⎡00:00:55.125 --> 00:00:57.083⎦⎦ ⎡⎡Speaker ⎦⎦ You guys' fashion sucks.\n"
-            "⎡⎡Speaker ⎦⎦ [buzzer] \n"
+            "⎡⎡Speaker ⎦⎦ [buzzer]\n"
             "⎡⎡00:00:57.083 --> 00:00:59.792⎦⎦ ⎡⎡Speaker ⎦⎦ [cackling]\n"
-            "⎡⎡Speaker ⎦⎦ Whoo! \n"
+            "⎡⎡Speaker ⎦⎦ Whoo!\n"
         )
+        print(repr(written))
+        print(repr(expected))
         assert written == expected
 
     @patch("helpers.preprocess.webvtt.read")
@@ -242,8 +265,9 @@ class TestFragments:
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
-        expected = "⎡⎡00:00:03.834 --> 00:00:08.167⎦⎦ ⎡⎡Speaker ⎦⎦ The initial news reports about the murder was shocking. \n"
-
+        expected = "⎡⎡00:00:03.834 --> 00:00:08.167⎦⎦ ⎡⎡Speaker ⎦⎦ The initial news reports about the murder was shocking.\n"
+        print(repr(written))
+        print(repr(expected))
         assert written == expected
 
     @patch("helpers.preprocess.webvtt.read")
@@ -273,10 +297,10 @@ class TestFragments:
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
             "⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
-            "⎡⎡00:00:03.250 --> 00:00:06.459⎦⎦ ⎡⎡Speaker ⎦⎦ LaGrange is a very pretty little town. \n"
+            "⎡⎡00:00:03.250 --> 00:00:06.459⎦⎦ ⎡⎡Speaker ⎦⎦ LaGrange is a very pretty little town.\n"
         )
-        print(f"'{written}'")
-        print(f"'{expected}'")
+        print(repr(written))
+        print(repr(expected))
         assert written == expected
 
     @patch("helpers.preprocess.webvtt.read")
@@ -294,8 +318,8 @@ class TestFragments:
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
-        expected = "⎡⎡00:00:06.542 --> 00:00:07.667⎦⎦ ⎡⎡Speaker ⎦⎦ Welcome back, y'all "
-
+        expected = "⎡⎡00:00:06.542 --> 00:00:07.667⎦⎦ ⎡⎡Speaker ⎦⎦ Welcome back, y'all"
+        
         assert written == expected
 
     @patch("helpers.preprocess.webvtt.read")
@@ -325,7 +349,8 @@ class TestFragments:
         written = "".join(call.args[0] for call in handle.write.call_args_list)
         expected = (
             "⎡⎡00:02:27.583 --> 00:02:29.292⎦⎦ ♪♪♪♪♪ \n"
-            "⎡⎡00:02:59.500 --> 00:03:00.917⎦⎦ ⎡⎡Speaker ⎦⎦ He's got my shoe. \n"
+            "⎡⎡00:02:59.500 --> 00:03:00.917⎦⎦ ⎡⎡Speaker ⎦⎦ He's got my shoe.\n"
         )
-
+        print(repr(written))
+        print(repr(expected))
         assert written == expected
